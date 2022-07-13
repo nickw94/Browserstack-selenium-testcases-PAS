@@ -1,0 +1,80 @@
+from this import d
+from threading import Thread
+from time import sleep
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+# This array 'caps' defines the capabilities browser, device and OS combinations where the test will run
+caps = [
+    {
+        'osVersion': 'Monterey',
+        'os': 'OS X',
+        'browser': 'edge',
+        'browserVersion': '103.0',
+        'name': 'Parallel Test1',  # test name
+        'build':
+        'browserstack-build-1'  # Your tests will be organized within this build
+    },
+    {
+        'osVersion': '10',
+        'os': 'Windows',
+        'browser': 'firefox',
+        'browserVersion': 'latest',
+        'name': 'Parallel Test2',
+        'build': 'browserstack-build-1'
+    },
+    {
+        'osVersion': 'Big Sur',
+        'os': 'OS X',
+        'browser': 'safari',
+        'browserVersion': 'latest',
+        'name': 'Parallel Test3',
+        'build': 'browserstack-build-1'
+    }
+]
+
+
+#run_session function searches for 'BrowserStack' on dev.profitaccelerationsoftware.com
+def run_session(desired_cap):
+    driver = webdriver.Remote(
+        command_executor=
+        'https://webmaster_U4ixrX:qyq1Jsde4ddsriYxTD44@hub-cloud.browserstack.com/wd/hub',
+        desired_capabilities=desired_cap)
+    driver.get("https://dev.profitaccelerationsoftware.com/login")
+    #if not "Logo" in driver.title:
+    #raise Exception("Unable to load pas page!")
+    elem = driver.find_element("Enter your email address").click()
+    elem.send_keys("nicholas@noresults-nofee.com")
+    elem.submit()
+    try:
+        WebDriverWait(driver, 5).until(
+            EC.title_contains("nicholas@noresults-nofee.com"))
+        driver.execute_script(
+            'browserstack_executor: {"action": "setSessionStatus", "arguments": {"status":"passed", "reason": "Title matched!"}}'
+        )
+    except TimeoutException:
+        driver.execute_script(
+            'browserstack_executor: {"action": "setSessionStatus", "arguments": {"status":"failed", "reason": "Title not matched"}}'
+        )
+    elem = driver.find_element_by_element("Enter your password")
+    elem.send_keys("Nick@2022")
+    elem.submit()
+    try:
+        WebDriverWait(driver, 5).until(EC.title_contains("Nick@2022"))
+        driver.execute_script(
+            'browserstack_executor: {"action": "setSessionStatus", "arguments": {"status":"passed", "reason": "Title matched!"}}'
+        )
+    except TimeoutException:
+        driver.execute_script(
+            'browserstack_executor: {"action": "setSessionStatus", "arguments": {"status":"failed", "reason": "Title not matched"}}'
+        )
+    print(driver.title)
+    driver.quit()
+
+
+#The Thread function takes run_session function and each set of capability from the caps array as an argument to run each session parallelly
+for cap in caps:
+    Thread(target=run_session, args=(cap, )).start()
